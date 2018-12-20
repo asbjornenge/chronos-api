@@ -1,43 +1,30 @@
 var pg = require('pg')
   , builder = require('mongo-sql');
 
-var PG = PG || {};
-var connectionString = null;
+const PG = {}
 
-var _create = PG.create = function (table, object, callback) {
-  var args = Array.prototype.slice.call(arguments, 1);
-  callback = typeof args[args.length - 1] == 'function' ? args.pop() : null;
-  object = typeof object === 'function' ? null : object;
-  table = typeof table === 'string' ? table : null;
-  
-  var query = builder.sql({
-      type: 'insert',
-      table: table,
-      values: object
-    });
-	
-	// Appending return to query to ensure the last insert is returned.
-	execute(query.toString() + ' RETURNING *', query.values, function (err, result){
-		return call(callback, err, result ? result.rows : []);		
-	});
-};
 
-var _retrieve = PG.retrieve = function (table, criteria, callback) {
-  var args = Array.prototype.slice.call(arguments, 1);
-  callback = typeof args[args.length - 1] == 'function' ? args.pop() : null;
-  where = typeof criteria === 'function' ? null : criteria;
-  table = typeof table === 'string' ? table : null;
+module.exports.get = async function get(client, table, criteria) {
+//  where = typeof criteria === 'function' ? null : criteria
+//  table = typeof table === 'string' ? table : null
 
   var query = builder.sql({
-      type: 'select',
-      table: table,
-      where: where
-    });
+    type: 'select',
+    table: table,
+    where: criteria
+  })
 
-  return execute(query.toString(), query.values, function (err, result){
-    call(callback, err, (result && result.rows) ? result.rows : []);
-  });
-};
+  return await client.query(query.toString(), query.values)
+}
+
+module.exports.post = async function (client, table, object) {
+  var query = builder.sql({
+    type: 'insert',
+    table: table,
+    values: object
+  })
+	return await client.query(query.toString() + ' RETURNING *', query.values)
+}
 
 var _update = PG.update = function (table, values, criteria, callback) {
   var args = Array.prototype.slice.call(arguments, 1);
@@ -118,9 +105,3 @@ var call = function (callback, err, param1, param2, param3) {
   if (err)
     throw err;
 };
-
-PG.isReady = function (){
-	return connectionString === null ? false : true;
-}
-
-module.exports = PG;

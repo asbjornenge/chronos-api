@@ -5,4 +5,5 @@ var tasks = require('./tasks')
 
 module.exports = cors(router(
   get('/tasks', tasks.get),
+  post('/tasks', tasks.post),
 ))
