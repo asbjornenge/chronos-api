@@ -4,8 +4,8 @@
   "description": "Chronos API",
   "main": "index.js",
   "scripts": {
-    "start": "micro index.js",
-    "dev": "micro-dev index.js"
+    "start": "micro index.js -l tcp://0.0.0.0:3001",
+    "dev": "micro-dev index.js -l tcp://0.0.0.0:3001"
   },
   "repository": {
     "type": "git",
