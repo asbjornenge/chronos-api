@@ -17,6 +17,6 @@ module.exports.post = async function(req, res) {
   payload.created = new Date()
   payload.updated = new Date()
   let raw = await crud.post(client, 'tasks', payload)
-  send(res, 200, raw.rows)
+  send(res, 200, raw.rows[0])
   await client.end()
 }
