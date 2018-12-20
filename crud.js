@@ -5,15 +5,11 @@ const PG = {}
 
 
 module.exports.get = async function get(client, table, criteria) {
-//  where = typeof criteria === 'function' ? null : criteria
-//  table = typeof table === 'string' ? table : null
-
   var query = builder.sql({
     type: 'select',
     table: table,
     where: criteria
   })
-
   return await client.query(query.toString(), query.values)
 }
 
@@ -26,22 +22,15 @@ module.exports.post = async function (client, table, object) {
 	return await client.query(query.toString() + ' RETURNING *', query.values)
 }
 
-var _update = PG.update = function (table, values, criteria, callback) {
-  var args = Array.prototype.slice.call(arguments, 1);
-  callback = typeof args[args.length - 1] === 'function' ? args.pop() : null;
-  where = typeof criteria === 'function' ? {} : criteria;
-  values = typeof values === 'function' ? {} : values;
-  table = typeof table === 'string' ? table : null;
-
+module.exports.put = async function (client, table, values, criteria) {
   var query = builder.sql({
-      type: 'update',
-      table: table,
-      updates: values,
-      where: where
-    });
-
-  return execute(query.toString(), query.values, callback);
-};
+    type: 'update',
+    table: table,
+    updates: values,
+    where: criteria 
+  })
+  return await client.query(query.toString() + 'RETURNING *', query.values)
+}
 
 var _delete = PG.delete = function (table,  criteria, callback) {
   var args = Array.prototype.slice.call(arguments, 1);

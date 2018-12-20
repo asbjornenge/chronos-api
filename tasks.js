@@ -20,3 +20,13 @@ module.exports.post = async function(req, res) {
   send(res, 200, raw.rows[0])
   await client.end()
 }
+
+module.exports.put = async function(req, res) {
+  let client = utils.getClient()
+  await client.connect()
+  let payload = await json(req)
+  payload.values.updated = new Date()
+  let raw = await crud.put(client, 'tasks', payload.values, payload.criteria)
+  send(res, 200, raw.rows.length === 1 ? raw.rows[0] : raw.rows)
+  await client.end()
+}
