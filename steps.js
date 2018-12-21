@@ -5,8 +5,8 @@ const crud = require('./crud')
 module.exports.get = async function(req, res) {
   let client = utils.getClient()
   await client.connect()
-  let tasks = await crud.get(client, 'tasks', req.params).then(raw => raw.rows)
-  send(res, 200, !req.params.id ? tasks : tasks[0])
+  let steps = await crud.get(client, 'steps', req.params).then(raw => raw.rows)
+  send(res, 200, !req.params.id ? steps : steps[0])
   await client.end()
 }
 
@@ -14,11 +14,10 @@ module.exports.post = async function(req, res) {
   let client = utils.getClient()
   await client.connect()
   let payload = await json(req)
-  payload.paused = true
   payload.created = new Date()
   payload.updated = new Date()
-  let raw = await crud.post(client, 'tasks', payload)
-  send(res, 200, raw.rows[0])
+  let step = await crud.post(client, 'steps', Object.assign(payload,req.params)).then(raw => raw.rows[0])
+  send(res, 200, step)
   await client.end()
 }
 
@@ -27,15 +26,15 @@ module.exports.put = async function(req, res) {
   await client.connect()
   let payload = await json(req)
   payload.updated = new Date()
-  let raw = await crud.put(client, 'tasks', payload, req.params)
-  send(res, 200, raw.rows.length === 1 ? raw.rows[0] : raw.rows)
+  let step = await crud.put(client, 'steps', payload, req.params).then(raw => raw.rows[0])
+  send(res, 200, step)
   await client.end()
 }
 
 module.exports.del = async function(req, res) {
   let client = utils.getClient()
   await client.connect()
-  let raw = await crud.delete(client, 'tasks', req.params)
+  let raw = await crud.delete(client, 'steps', req.params)
   send(res, 200)
   await client.end()
 }
