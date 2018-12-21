@@ -6,6 +6,18 @@ module.exports.get = async function(req, res) {
   let client = utils.getClient()
   await client.connect()
   let tasks = await crud.get(client, 'tasks', req.params).then(raw => raw.rows)
+  if (req.query.steps) {
+    for (task of tasks) {
+      task.steps = await crud.get(client, 'steps', { task: task.id }).then(raw => raw.rows)
+      if (req.query.execs) {
+        let num_execs = parseInt(req.query.execs)
+        for (step of task.steps) {
+          step.execs = await client.query(`select * from execs where step=${step.id} order by time_end DESC limit ${num_execs}`)
+            .then(raw => raw.rows)
+        }
+      }
+    }
+  }
   send(res, 200, !req.params.id ? tasks : tasks[0])
   await client.end()
 }
