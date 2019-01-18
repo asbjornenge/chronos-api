@@ -25,3 +25,5 @@ CREATE TABLE IF NOT EXISTS execs (
   time_start    timestamp not null,
   time_end      timestamp not null
 );
+
+ALTER TABLE steps ADD COLUMN name varchar(100);
