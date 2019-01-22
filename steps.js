@@ -35,6 +35,6 @@ module.exports.del = async function(req, res) {
   let client = utils.getClient()
   await client.connect()
   let raw = await crud.delete(client, 'steps', req.params)
-  send(res, 200)
+  send(res, 200, {})
   await client.end()
 }
