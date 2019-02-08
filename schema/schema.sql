@@ -27,3 +27,4 @@ CREATE TABLE IF NOT EXISTS execs (
 );
 
 ALTER TABLE steps ADD COLUMN name varchar(100);
+ALTER TABLE steps DROP CONSTRAINT steps_task_fkey, ADD CONSTRAINT steps_task_fkey FOREIGN KEY (task) REFERENCES tasks(id) ON DELETE CASCADE;
