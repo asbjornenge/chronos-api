@@ -4,6 +4,13 @@ var tasks = require('./tasks')
 var steps = require('./steps')
 var execs = require('./execs')
 var dashboard = require('./dashboard')
+var schedule = require('./schedule')
+
+;
+
+(async () => {
+  await schedule.init()
+})()
 
 module.exports = cors(router(
   get('/tasks/:task/steps/:step/execs', execs.get),
