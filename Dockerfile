@@ -1,4 +1,8 @@
 FROM node:11-alpine
+RUN apk add wget tar
+RUN wget https://download.docker.com/linux/static/stable/x86_64/docker-18.06.3-ce.tgz
+RUN tar zxvf docker-18.06.3-ce.tgz
+RUN mv docker/* /usr/local/bin/
 RUN mkdir /app
 ADD *.js /app/
 ADD *.json /app/
