@@ -25,7 +25,8 @@ const run = async function(date) {
   task = task[0]
   if (task.paused) throw new Error(`Task ${task.id} tried to run even if task if paused`)
   let steps = await crud.get(client, 'steps', { task: task.id }, { order: { 'sort_order': 'asc' } }).then(raw => raw.rows)
-  for (step of steps) {
+  for (let step of steps) {
+    console.log(`Running step ${step.name} with id ${step.id}`)
     var _stdout, _stederr, exitcode;
     var time_start = new Date()
     try {
