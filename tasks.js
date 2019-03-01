@@ -9,7 +9,7 @@ module.exports.get = async function(req, res) {
   let tasks = await crud.get(client, 'tasks', req.params).then(raw => raw.rows)
   if (req.query.steps) {
     for (task of tasks) {
-      task.steps = await crud.get(client, 'steps', { task: task.id }).then(raw => raw.rows)
+      task.steps = await crud.get(client, 'steps', { task: task.id }, { order: {'sort_order': 'asc'} }).then(raw => raw.rows)
       if (req.query.execs) {
         let num_execs = parseInt(req.query.execs)
         for (step of task.steps) {

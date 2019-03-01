@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS tasks (
 
 CREATE TABLE IF NOT EXISTS steps (
   id            serial PRIMARY KEY,
-  task          integer REFERENCES tasks,
+  task          integer REFERENCES tasks ON DELETE CASCADE,
   command       text,
   timeout       integer,
   created       timestamp not null,
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS steps (
 
 CREATE TABLE IF NOT EXISTS execs (
   id            serial PRIMARY KEY,
-  step          integer REFERENCES steps,
+  step          integer REFERENCES steps ON DELETE CASCADE,
   stdout        text,
   stderr        text,
   exitcode      integer,
@@ -27,5 +27,8 @@ CREATE TABLE IF NOT EXISTS execs (
 );
 
 ALTER TABLE steps ADD COLUMN name varchar(100);
+ALTER TABLE steps ADD COLUMN sort_order integer;
+/* 
 ALTER TABLE steps DROP CONSTRAINT steps_task_fkey, ADD CONSTRAINT steps_task_fkey FOREIGN KEY (task) REFERENCES tasks(id) ON DELETE CASCADE;
 ALTER TABLE execs DROP CONSTRAINT execs_step_fkey, ADD CONSTRAINT execs_step_fkey FOREIGN KEY (step) REFERENCES steps(id) ON DELETE CASCADE;
+*/
