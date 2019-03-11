@@ -1,6 +1,7 @@
 const hash = require('object-hash')
 const schedule = require('node-schedule')
 const { exec, spawn } = require('child-process-async')
+const { exec_success, exec_error } = require('./metrics')
 const utils = require('./utils')
 const crud = require('./crud')
 
@@ -48,6 +49,8 @@ const run = async function(date) {
       time_start: time_start,
       time_end: time_end
     })
+    if (exitcode === 0) exec_success.inc()
+    else exec_error.inc()
   }
   await client.end()
 }

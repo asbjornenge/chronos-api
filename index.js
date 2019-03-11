@@ -5,6 +5,7 @@ var steps = require('./steps')
 var execs = require('./execs')
 var dashboard = require('./dashboard')
 var schedule = require('./schedule')
+var metrics = require('./metrics')
 
 ;
 
@@ -28,5 +29,6 @@ module.exports = cors(router(
   put('/tasks/:id', tasks.put),
   del('/tasks/:id', tasks.del),
   post('/tasks', tasks.post),
-  get('/dashboard', dashboard.get)
+  get('/dashboard', dashboard.get),
+  get('/metrics', metrics.get)
 ))
