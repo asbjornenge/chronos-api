@@ -12,7 +12,7 @@ module.exports.get = async function(req, res) {
     task.steps = await client.query(`select * from steps where task=${task.id} order by created`)
                         .then(raw => raw.rows)
     for (step of task.steps) {
-      step.execs = await client.query(`select * from execs where step=${step.id} order by time_end DESC limit 1`)
+      step.execs = await client.query(`select * from execs where step=${step.id} order by time_end DESC limit 10`)
                         .then(raw => raw.rows)
     }
   }
