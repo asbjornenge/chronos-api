@@ -5,7 +5,7 @@ const crud = require('./crud')
 module.exports.get = async function(req, res) {
   let client = utils.getClient()
   await client.connect()
-  let tasks = await client.query(`select * from tasks order by created`)
+  let tasks = await client.query(`select * from tasks order by created DESC`)
                         .then(raw => raw.rows)
   let steps,execs = [] 
   for (task of tasks) {
