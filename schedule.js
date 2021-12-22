@@ -25,34 +25,42 @@ const run = async function(date) {
   let task = await crud.get(client, 'tasks', { id: this.task.id }).then(raw => raw.rows)
   task = task[0]
   if (task.paused) throw new Error(`Task ${task.id} tried to run even if task if paused`)
-  let steps = await crud.get(client, 'steps', { task: task.id }, { order: { 'sort_order': 'asc' } }).then(raw => raw.rows)
-  for (let step of steps) {
-    console.log(`Running step ${step.name} with id ${step.id}`)
-    var _stdout, _stederr, exitcode;
-    var time_start = new Date()
-    try {
-      let { stdout, stderr } = await exec(step.command)
-      _stdout = stdout
-      _stderr = stderr
-      exitcode = 0
-    } catch(e) {
-      _stdout = ''
-      _stderr = e.message
-      exitcode = e.code
-    }
-    let time_end = new Date()
-    await crud.post(client, 'execs', {
-      step: step.id,
-      stdout: _stdout,
-      stderr: _stderr,
-      exitcode: exitcode,
-      time_start: time_start,
-      time_end: time_end
-    })
-    if (exitcode === 0) exec_success.inc()
-    else exec_error.inc()
-  }
+  doRun(task, client)
   await client.end()
+}
+
+const doRun = async function(task, client) {
+  let steps = await crud.get(client, 'steps', { task: task.id }, { order: { 'sort_order': 'asc' } }).then(raw => raw.rows)
+  for (let step of steps) {
+    await doStep(client, step)
+  }
+}
+
+const doStep = async function(client, step) {
+  console.log(`Running step ${step.name} with id ${step.id}`)
+  var _stdout, _stderr, exitcode;
+  var time_start = new Date()
+  try {
+    let { stdout, stderr } = await exec(step.command)
+    _stdout = stdout
+    _stderr = stderr
+    exitcode = 0
+  } catch(e) {
+    _stdout = ''
+    _stderr = e.message
+    exitcode = e.code
+  }
+  let time_end = new Date()
+  await crud.post(client, 'execs', {
+    step: step.id,
+    stdout: _stdout,
+    stderr: _stderr,
+    exitcode: exitcode,
+    time_start: time_start,
+    time_end: time_end
+  })
+  if (exitcode === 0) exec_success.inc()
+  else exec_error.inc()
 }
 
 const scheduleTask = (task) => {
@@ -111,5 +119,8 @@ const remove = async (id) => {
 module.exports = {
   init,
   update,
-  remove
+  remove,
+  doRun,
+  doStep,
+  getTaskHash
 }

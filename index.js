@@ -6,7 +6,8 @@ var execs = require('./execs')
 var dashboard = require('./dashboard')
 var schedule = require('./schedule')
 var metrics = require('./metrics')
-
+var runTask = require('./runtask')
+var runStep = require('./runstep')
 ;
 
 (async () => {
@@ -30,5 +31,7 @@ module.exports = cors(router(
   del('/tasks/:id', tasks.del),
   post('/tasks', tasks.post),
   get('/dashboard', dashboard.get),
-  get('/metrics', metrics.get)
+  get('/metrics', metrics.get),
+  get('/run/:task/steps/:id', runStep.get),
+  get('/run/:task', runTask.get),
 ))
