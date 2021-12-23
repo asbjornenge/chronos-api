@@ -29,8 +29,8 @@ const run = async function(date) {
   await client.end()
 }
 
-const doRun = async function(task, client) {
-  let steps = await crud.get(client, 'steps', { task: task.id }, { order: { 'sort_order': 'asc' } }).then(raw => raw.rows)
+const doRun = async function(taskid, client) {
+  let steps = await crud.get(client, 'steps', { task: taskid }, { order: { 'sort_order': 'asc' } }).then(raw => raw.rows)
   for (let step of steps) {
     await doStep(client, step)
   }
