@@ -18,14 +18,14 @@ const getTaskHash = (task) => {
   return hash(_task)
 }
 
-const run = async function(date) {
+const run = async function(task) {
   // TODO: Wrap in try/cath ??
   let client = utils.getClient()
   await client.connect()
-  let task = await crud.get(client, 'tasks', { id: this.task.id }).then(raw => raw.rows)
-  task = task[0]
-  if (task.paused) throw new Error(`Task ${task.id} tried to run even if task if paused`)
-  doRun(task, client)
+  let etask = await crud.get(client, 'tasks', { id: this.task.id }).then(raw => raw.rows)
+  etask = etask[0]
+  if (etask.paused) throw new Error(`Task ${etask.id} tried to run even if task if paused`)
+  await doRun(etask.id, client)
   await client.end()
 }
 
@@ -67,7 +67,7 @@ const scheduleTask = (task) => {
   let taskHash = getTaskHash(task)
   schedules[task.id] = {
     hash: taskHash,
-    job: schedule.scheduleJob(task.cron, run.bind({task: { id: task.id, hash: taskHash }}))
+    job: schedule.scheduleJob(task.cron, run.bind({task: {id: task.id}}))
   }
 }
 
