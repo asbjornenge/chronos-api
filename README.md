@@ -32,13 +32,14 @@ docker run -p 3001:3001 -e DB_HOST=postgres -it asbjornenge/chronos-api:latest
 Supported environment variables:
 
 ```
-env       default      wat
+env         default      wat
 --
-DB_HOST   localhost    postgres hostname / ip
-DB_PORT   5432         postgres port
-DB_USER   chronos      postgres username
-DB_PASS   chronos      postgres password
-DB_NAME   chronos      postgres database
+DB_HOST     localhost    postgres hostname / ip
+DB_PORT     5432         postgres port
+DB_USER     chronos      postgres username
+DB_PASS     chronos      postgres password
+DB_NAME     chronos      postgres database
+FILES_PATH  /files       path to store uploaded files
 ```
 
 ### Run the app

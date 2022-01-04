@@ -29,7 +29,6 @@ CREATE TABLE IF NOT EXISTS execs (
 CREATE TABLE IF NOT EXISTS secrets (
   id            serial PRIMARY KEY,
   name          varchar(100),
-  secrettype    varchar(50),
   secretvalue   text,
   created       timestamp not null,
   updated       timestamp not null
