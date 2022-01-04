@@ -8,6 +8,7 @@ var schedule = require('./schedule')
 var metrics = require('./metrics')
 var runTask = require('./runtask')
 var runStep = require('./runstep')
+var secrets = require('./secrets')
 ;
 
 (async () => {
@@ -34,4 +35,7 @@ module.exports = cors(router(
   get('/metrics', metrics.get),
   get('/run/:task/steps/:id', runStep.get),
   get('/run/:task', runTask.get),
+  get('/secrets', secrets.get),
+  post('/secrets', secrets.post),
+  del('/secrets/:id', secrets.del)
 ))

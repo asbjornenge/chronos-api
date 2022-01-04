@@ -1,11 +1,12 @@
 var pg = require('pg')
 var builder = require('mongo-sql')
 
-module.exports.get = async function get(client, table, criteria, helpers={}) {
+module.exports.get = async function get(client, table, criteria, helpers={}, columns) {
   var query = builder.sql(Object.assign({
     type: 'select',
     table: table,
-    where: criteria
+    where: criteria,
+    columns: columns
   }, helpers))
   return await client.query(query.toString(), query.values)
 }

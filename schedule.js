@@ -38,10 +38,14 @@ const doRun = async function(taskid, client) {
 
 const doStep = async function(client, step) {
   console.log(`Running step ${step.name} with id ${step.id}`)
+  let secrets = await crud.get(client, 'secrets').then(raw => raw.rows)
   var _stdout, _stderr, exitcode;
   var time_start = new Date()
+  secrets.forEach(s => step.command = step.command.replace('{{' + s.name + "}}", s.secretvalue))
   try {
-    let { stdout, stderr } = await exec(step.command)
+    let { stdout, stderr } = await exec(step.command, {
+      timeout: step.timeout
+    })
     _stdout = stdout
     _stderr = stderr
     exitcode = 0
@@ -51,6 +55,9 @@ const doStep = async function(client, step) {
     exitcode = e.code
   }
   let time_end = new Date()
+  secrets.forEach(s => _stderr = _stderr.replace(s.secretvalue, '{{' + s.name + "}}"))
+  secrets.forEach(s => _stdout = _stdout.replace(s.secretvalue, '{{' + s.name + "}}"))
+
   await crud.post(client, 'execs', {
     step: step.id,
     stdout: _stdout,
