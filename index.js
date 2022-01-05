@@ -9,7 +9,7 @@ var metrics = require('./metrics')
 var runTask = require('./runtask')
 var runStep = require('./runstep')
 var secrets = require('./secrets')
-var files = require('/files')
+var files = require('./files')
 ;
 
 (async () => {
@@ -40,5 +40,9 @@ module.exports = cors(router(
   post('/secrets', secrets.post),
   del('/secrets/:id', secrets.del),
   put('/secrets/:id', secrets.put),
-  get('/files', files.get)
+  get('/files', files.get),
+  del('/files/:file', files.del),
+  del('/files/*', files.del),
+  post('/files/:file', files.post),
+  post('/files/*', files.post)
 ))

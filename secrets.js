@@ -34,7 +34,6 @@ module.exports.put = async function(req, res) {
   let client = utils.getClient()
   await client.connect()
   let payload = await json(req)
-  console.log(payload)
   payload.updated = new Date()
   let step = await crud.put(client, 'secrets', payload, req.params).then(raw => raw.rows[0])
   await client.end()
