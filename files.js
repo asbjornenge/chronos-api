@@ -1,6 +1,4 @@
-const { json, send, buffer } = require('micro')
-const utils = require('./utils')
-const crud = require('./crud')
+const {send, buffer } = require('micro')
 const fs = require('fs')
 
 module.exports.get = async function(req, res) {
@@ -66,25 +64,3 @@ module.exports.post = async function(req, res) {
     send(res, 400, {ERROR: "No such file"})
   }
 }
-
-// module.exports.post = async function(req, res) {
-//   let client = utils.getClient()
-//   await client.connect()
-//   let payload = await json(req)
-//   payload.created = new Date()
-//   payload.updated = new Date()
-//   let raw = await crud.post(client, 'secrets', payload)
-//   await client.end()
-//   send(res, 200, raw.rows[0])
-// }
-
-// module.exports.put = async function(req, res) {
-//   let client = utils.getClient()
-//   await client.connect()
-//   let payload = await json(req)
-//   console.log(payload)
-//   payload.updated = new Date()
-//   let step = await crud.put(client, 'secrets', payload, req.params).then(raw => raw.rows[0])
-//   await client.end()
-//   send(res, 200, step)
-// }
