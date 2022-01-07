@@ -109,7 +109,12 @@ const update = async (id) => {
   if (!task.paused && schedules[task.id] != undefined) {
     if (taskHash != schedules[task.id].hash) {
       console.log('Task changed, reinstalling...')
-      schedules[task.id].job.cancel()
+      try {
+        schedules[task.id].job.cancel()
+      }
+      catch (err) {
+        console.error(err)
+      }
       scheduleTask(task)
     }
   }

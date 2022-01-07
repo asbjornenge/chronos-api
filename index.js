@@ -4,16 +4,22 @@ const router = require('./routes')
 const cors = require('cors')
 
 async function authValidator (req, res, next) {
-    if (typeof req !== "undefined" && req.oidc !== undefined) {
-        if (!req.oidc.isAuthenticated()) {
-            res.status(401).send("Not authenticated")
-        }
-        else {
-            next()    
-        }
+    //auth bypass for metrics
+    if (typeof req !== "undefined" && req.path === "/metrics") {
+        next()
     }
     else {
-        res.status(401).send("Not authenticated")
+        if (typeof req !== "undefined" && req.oidc !== undefined) {
+            if (!req.oidc.isAuthenticated()) {
+                res.status(401).send("Not authenticated")
+            }
+            else {
+                next()    
+            }
+        }
+        else {
+            res.status(401).send("Not authenticated")
+        }
     }
 }
 
