@@ -1,48 +1,58 @@
-const { router, get, post, put, del } = require('microrouter')
-const cors = require('micro-cors')()
-var tasks = require('./tasks')
-var steps = require('./steps')
-var execs = require('./execs')
-var dashboard = require('./dashboard')
-var schedule = require('./schedule')
-var metrics = require('./metrics')
-var runTask = require('./runtask')
-var runStep = require('./runstep')
-var secrets = require('./secrets')
-var files = require('./files')
-;
+const express = require('express')
+const app = express()
+const router = require('./routes')
+const cors = require('cors')
 
-(async () => {
-  await schedule.init()
-})()
+async function authValidator (req, res, next) {
+    if (typeof req !== "undefined" && req.oidc !== undefined) {
+        if (!req.oidc.isAuthenticated()) {
+            res.status(401).send("Not authenticated")
+        }
+        else {
+            next()    
+        }
+    }
+    else {
+        res.status(401).send("Not authenticated")
+    }
+}
 
-module.exports = cors(router(
-  get('/tasks/:task/steps/:step/execs', execs.get),
-  get('/tasks/:task/steps/:step/execs/:id', execs.get),
-  put('/tasks/:task/steps/:step/execs/:id', execs.put),
-  del('/tasks/:task/steps/:step/execs/:id', execs.del),
-  post('/tasks/:task/steps/:step/execs', execs.post),
-  get('/tasks/:task/steps', steps.get),
-  get('/tasks/:task/steps/:id', steps.get),
-  put('/tasks/:task/steps/:id', steps.put),
-  del('/tasks/:task/steps/:id', steps.del),
-  post('/tasks/:task/steps', steps.post),
-  get('/tasks', tasks.get),
-  get('/tasks/:id', tasks.get),
-  put('/tasks/:id', tasks.put),
-  del('/tasks/:id', tasks.del),
-  post('/tasks', tasks.post),
-  get('/dashboard', dashboard.get),
-  get('/metrics', metrics.get),
-  get('/run/:task/steps/:id', runStep.get),
-  get('/run/:task', runTask.get),
-  get('/secrets', secrets.get),
-  post('/secrets', secrets.post),
-  del('/secrets/:id', secrets.del),
-  put('/secrets/:id', secrets.put),
-  get('/files', files.get),
-  del('/files/:file', files.del),
-  del('/files/*', files.del),
-  post('/files/:file', files.post),
-  post('/files/*', files.post)
-))
+if ((process.env['AUTH0_BASEURL'] || false ) !== false) {
+    app.use(cors({
+        origin: process.env['FRONT_URL'] || "http://localhost:3000",
+        credentials: true
+    }))
+
+    const { auth } = require('express-openid-connect');
+
+    const config = {
+        authRequired: false,
+        auth0Logout: true,
+        secret: process.env['AUTH0_SECRET'] || null, 
+        baseURL: process.env['AUTH0_BASEURL'] || null,
+        clientID: process.env['AUTH0_CLIENTID'] || null,
+        issuerBaseURL: process.env['AUTH0_ISSUERURL'] || null
+    };
+
+    app.use(auth(config));
+    app.use(authValidator)
+
+    //add profile endpoint
+    router.get('/profile', (req, res) => {
+        res.send(JSON.stringify(req.oidc.user));
+    });
+}
+else {
+    app.use(cors({
+        origin: process.env['FRONT_URL'] || "http://localhost:3000",
+        credentials: true
+    }))
+
+    router.get('/profile', (req, res) => {
+        res.send(JSON.stringify({}))
+    })
+}
+
+
+app.use('/', router)
+app.listen(3001)
