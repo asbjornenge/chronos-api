@@ -79,6 +79,7 @@ const getExecStatus = async function () {
       }
     }
   }
+  await client.end()
   return({
     success:  successExecs, 
     error:    failedExecs, 
