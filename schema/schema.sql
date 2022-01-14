@@ -26,6 +26,15 @@ CREATE TABLE IF NOT EXISTS execs (
   time_end      timestamp not null
 );
 
+CREATE TABLE IF NOT EXISTS secrets (
+  id            serial PRIMARY KEY,
+  name          varchar(100),
+  secretvalue   text,
+  created       timestamp not null,
+  updated       timestamp not null
+);
+ 
+
 ALTER TABLE steps ADD COLUMN name varchar(100);
 ALTER TABLE steps ADD COLUMN sort_order integer;
 /* 

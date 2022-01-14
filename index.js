@@ -1,34 +1,64 @@
-const { router, get, post, put, del } = require('microrouter')
-const cors = require('micro-cors')()
-var tasks = require('./tasks')
-var steps = require('./steps')
-var execs = require('./execs')
-var dashboard = require('./dashboard')
-var schedule = require('./schedule')
-var metrics = require('./metrics')
+const express = require('express')
+const app = express()
+const router = require('./routes')
+const cors = require('cors')
 
-;
+async function authValidator (req, res, next) {
+    //auth bypass for metrics
+    if (typeof req !== "undefined" && req.path === "/metrics") {
+        next()
+    }
+    else {
+        if (typeof req !== "undefined" && req.oidc !== undefined) {
+            if (!req.oidc.isAuthenticated()) {
+                res.status(401).send("Not authenticated")
+            }
+            else {
+                next()    
+            }
+        }
+        else {
+            res.status(401).send("Not authenticated")
+        }
+    }
+}
 
-(async () => {
-  await schedule.init()
-})()
+if ((process.env['AUTH0_BASEURL'] || false ) !== false) {
+    app.use(cors({
+        origin: process.env['FRONT_URL'] || "http://localhost:3000",
+        credentials: true
+    }))
 
-module.exports = cors(router(
-  get('/tasks/:task/steps/:step/execs', execs.get),
-  get('/tasks/:task/steps/:step/execs/:id', execs.get),
-  put('/tasks/:task/steps/:step/execs/:id', execs.put),
-  del('/tasks/:task/steps/:step/execs/:id', execs.del),
-  post('/tasks/:task/steps/:step/execs', execs.post),
-  get('/tasks/:task/steps', steps.get),
-  get('/tasks/:task/steps/:id', steps.get),
-  put('/tasks/:task/steps/:id', steps.put),
-  del('/tasks/:task/steps/:id', steps.del),
-  post('/tasks/:task/steps', steps.post),
-  get('/tasks', tasks.get),
-  get('/tasks/:id', tasks.get),
-  put('/tasks/:id', tasks.put),
-  del('/tasks/:id', tasks.del),
-  post('/tasks', tasks.post),
-  get('/dashboard', dashboard.get),
-  get('/metrics', metrics.get)
-))
+    const { auth } = require('express-openid-connect');
+
+    const config = {
+        authRequired: false,
+        auth0Logout: true,
+        secret: process.env['AUTH0_SECRET'] || null, 
+        baseURL: process.env['AUTH0_BASEURL'] || null,
+        clientID: process.env['AUTH0_CLIENTID'] || null,
+        issuerBaseURL: process.env['AUTH0_ISSUERURL'] || null
+    };
+
+    app.use(auth(config));
+    app.use(authValidator)
+
+    //add profile endpoint
+    router.get('/profile', (req, res) => {
+        res.send(JSON.stringify(req.oidc.user));
+    });
+}
+else {
+    app.use(cors({
+        origin: process.env['FRONT_URL'] || "http://localhost:3000",
+        credentials: true
+    }))
+
+    router.get('/profile', (req, res) => {
+        res.send(JSON.stringify({}))
+    })
+}
+
+
+app.use('/', router)
+app.listen(3001)
