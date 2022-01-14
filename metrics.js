@@ -1,7 +1,6 @@
 const prom = require('prom-client')
 const parser = require('cron-parser')
 const utils = require('./utils')
-const { client_encoding } = require('pg/lib/defaults')
 
 var exec_success = new prom.Gauge({
   name: 'chronos_exec_success',
