@@ -54,6 +54,14 @@ const doStep = async function(client, step) {
     exitcode = e.code
   }
   let time_end = new Date()
+
+  if (step.stdoutregex !== null && exitcode === 0) {
+    re = new RegExp(step.stdoutregex)
+    if (!re.test(_stdout)) {
+      console.log(`Step ${step.name} returned exitcode 0 but failed the regex check`)
+      exitcode = 1
+    }
+  }
   secrets.forEach(s => _stderr = _stderr.replace(s.secretvalue, '{{' + s.name + "}}"))
   secrets.forEach(s => _stdout = _stdout.replace(s.secretvalue, '{{' + s.name + "}}"))
 

@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS steps (
   command       text,
   timeout       integer,
   created       timestamp not null,
-  updated       timestamp not null
+  updated       timestamp not null,
+  stdoutRegex   text
 );
 
 CREATE TABLE IF NOT EXISTS execs (
@@ -37,6 +38,7 @@ CREATE TABLE IF NOT EXISTS secrets (
 
 ALTER TABLE steps ADD COLUMN name varchar(100);
 ALTER TABLE steps ADD COLUMN sort_order integer;
+ALTER TABLE steps ADD COLUMN stdoutRegex text;
 /* 
 ALTER TABLE steps DROP CONSTRAINT steps_task_fkey, ADD CONSTRAINT steps_task_fkey FOREIGN KEY (task) REFERENCES tasks(id) ON DELETE CASCADE;
 ALTER TABLE execs DROP CONSTRAINT execs_step_fkey, ADD CONSTRAINT execs_step_fkey FOREIGN KEY (step) REFERENCES steps(id) ON DELETE CASCADE;
