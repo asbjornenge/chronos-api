@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS tasks (
   cron          varchar(100),
   paused        boolean,
   created       timestamp not null,
-  updated       timestamp not null
+  updated       timestamp not null,
+  category      integer REFERENCES 
 );
 
 CREATE TABLE IF NOT EXISTS steps (
@@ -24,7 +25,7 @@ CREATE TABLE IF NOT EXISTS execs (
   stderr        text,
   exitcode      integer,
   time_start    timestamp not null,
-  time_end      timestamp not null
+  time_end      timestamp not null,
 );
 
 CREATE TABLE IF NOT EXISTS secrets (
@@ -34,7 +35,29 @@ CREATE TABLE IF NOT EXISTS secrets (
   created       timestamp not null,
   updated       timestamp not null
 );
- 
+
+CREATE TABLE IF NOT EXISTS category (
+  id            serial PRIMARY KEY,
+  name          varchar(100),
+)
+
+CREATE TABLE IF NOT EXISTS categoryPermissionMapping (
+  id            serial PRIMARY KEY
+  userGroup     integer REFERENCES userGroups ON DELETE CASCADE
+  category      integer REFERENCES category ON DELETE CASCADE
+) 
+
+CREATE TABLE IF NOT EXISTS userGroups (
+  id            serial PRIMARY KEY
+  name          varchar(100)
+  isAdmin       boolean
+)
+
+CREATE TABLE IF NOT EXISTS userGroupMembership (
+  id            serial PRIMARY KEY
+  userId        varchar(100)
+  userGroup     integer REFERENCES userGroups ON DELETE CASCADE
+)
 
 ALTER TABLE steps ADD COLUMN name varchar(100);
 ALTER TABLE steps ADD COLUMN sort_order integer;
