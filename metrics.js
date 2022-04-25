@@ -38,7 +38,7 @@ const getExecStatus = async function () {
   for (task of tasks) {
     if (!task.paused) {
       for (step of task.steps) {
-        if (typeof(step.execs) === "undefined") {
+        if (typeof(step.execs[0]) === "undefined") {
           failedExecs += 1
         }
         else {
