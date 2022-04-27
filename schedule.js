@@ -6,6 +6,10 @@ const crud = require('./crud')
 
 let schedules = {}
 
+const replaceAll = (str, find, replace) =>  {
+  return str.replace(new RegExp(find, 'g'), replace);
+}
+
 const getTaskHash = (task) => {
   let _task = Object.assign({}, task)
   delete _task.created
@@ -40,7 +44,7 @@ const doStep = async function(client, step) {
   let secrets = await crud.get(client, 'secrets').then(raw => raw.rows)
   var _stdout, _stderr, exitcode;
   var time_start = new Date()
-  secrets.forEach(s => step.command = step.command.replaceAll('{{' + s.name + "}}", s.secretvalue))
+  secrets.forEach(s => step.command = replaceAll(step.command, '{{' + s.name + "}}", s.secretvalue))
   try {
     let { stdout, stderr } = await exec(step.command, {
       timeout: step.timeout
@@ -62,8 +66,8 @@ const doStep = async function(client, step) {
       exitcode = 1
     }
   }
-  secrets.forEach(s => _stderr = _stderr.replaceAll(s.secretvalue, '{{' + s.name + "}}"))
-  secrets.forEach(s => _stdout = _stdout.replaceAll(s.secretvalue, '{{' + s.name + "}}"))
+  secrets.forEach(s => _stderr = replaceAll(_stderr, s.secretvalue, '{{' + s.name + "}}"))
+  secrets.forEach(s => _stdout = replaceAll(_stdout, s.secretvalue, '{{' + s.name + "}}"))
 
   await crud.post(client, 'execs', {
     step: step.id,
