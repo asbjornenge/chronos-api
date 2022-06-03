@@ -13,6 +13,7 @@ var runTask = require('./runtask')
 var runStep = require('./runstep')
 var secrets = require('./secrets')
 var files = require('./files')
+var failed = require('./failed')
 const { requiresAuth } = require('express-openid-connect');
 ;
 
@@ -34,6 +35,7 @@ router.get('/tasks/:task/steps/:step/execs/:id', execs.get),
 router.put('/tasks/:task/steps/:step/execs/:id', execs.put),
 router.delete('/tasks/:task/steps/:step/execs/:id', execs.del),
 router.post('/tasks/:task/steps/:step/execs', execs.post),
+router.get('/execs/failed', failed.get)
 
 //steps
 router.get('/tasks/:task/steps', steps.get),
