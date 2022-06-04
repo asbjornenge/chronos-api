@@ -78,7 +78,7 @@ const doStep = async function(client, step) {
     })
 
     ex.stderr.on('data', (d) => {
-      if (typeof _stdout === "undefined") _stdout = ""
+      if (typeof _stderr === "undefined") _stderr = ""
       if (typeof d !== "undefined") {
         _stderr = _stderr + d.toString()
       }
@@ -100,6 +100,7 @@ const doStep = async function(client, step) {
       if (typeof exitcode === "undefiend") {
         exitcode = 1
       }
+      if (exitcode === null) { exitcode = 1 }
       notDone = false
     })
     ex.on('error', (e) => {
@@ -109,6 +110,7 @@ const doStep = async function(client, step) {
     while(notDone) {
       //sleep while the socket is open.
       if (waitedFor >= parseInt(step.timeout)) {
+        if (typeof _stderr === "undefined") _stderr = ""
         _stderr = _stderr + `The command timed out after ${waitedFor / 1000} seconds.`
         ex.stdin.pause()
         ex.stdout.destroy()
