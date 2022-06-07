@@ -3,16 +3,21 @@ const fs = require('fs')
 
 module.exports.get = async function(req, res) {
   let folder = process.env['FILES_PATH'] || '/files'
-  let files = fs.readdirSync(folder)
-  let response = []
-  files.forEach(e => {
-    response.push({
-        name: e,
-        folder: folder,
-        fullname: folder + '/' + e
+  if (fs.existsSync(folder)) {
+    let files = fs.readdirSync(folder)
+    let response = []
+    files.forEach(e => {
+      response.push({
+          name: e,
+          folder: folder,
+          fullname: folder + '/' + e
+      })
     })
-  })
-  send(res, 200, JSON.stringify(response))
+    send(res, 200, JSON.stringify(response))
+  }
+  else {
+    send(res, 200, JSON.stringify([]))
+  }
 }
 
 module.exports.del = async function(req, res) {

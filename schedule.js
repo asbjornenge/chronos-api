@@ -100,7 +100,11 @@ const doStep = async function(client, step) {
       if (typeof exitcode === "undefiend") {
         exitcode = 1
       }
-      if (exitcode === null) { exitcode = 1 }
+      if (exitcode === null) { 
+        exitcode = 124
+        if (typeof _stderr === "undefined") _stderr = ""
+        _stderr = _stderr + `The command timed out after ${step.timeout / 1000} seconds.`
+      }
       notDone = false
     })
     ex.on('error', (e) => {
@@ -109,23 +113,23 @@ const doStep = async function(client, step) {
     let waitedFor = 0
     while(notDone) {
       //sleep while the socket is open.
-      if (waitedFor >= parseInt(step.timeout)) {
-        if (typeof _stderr === "undefined") _stderr = ""
-        _stderr = _stderr + `The command timed out after ${waitedFor / 1000} seconds.`
-        ex.stdin.pause()
-        ex.stdout.destroy()
-        ex.stdin.destroy()
-        ex.stderr.destroy()
-        ex.kill('SIGINT')
-        ex.kill('SIGINT')
-        ex.kill()
-        //console.log(ex)
+      // if (waitedFor >= parseInt(step.timeout)) {
+      //   if (typeof _stderr === "undefined") _stderr = ""
+      //   _stderr = _stderr + `The command timed out after ${waitedFor / 1000} seconds.`
+      //   ex.stdin.pause()
+      //   ex.stdout.destroy()
+      //   ex.stdin.destroy()
+      //   ex.stderr.destroy()
+      //   ex.kill('SIGINT')
+      //   ex.kill('SIGINT')
+      //   ex.kill()
+      //   //console.log(ex)
         
-        ex.close()
+      //   ex.close()
 
 
-        notDone = false
-      }
+      //   notDone = false
+      // }
       await new Promise(r => setTimeout(r, 100))
       waitedFor += 100
     }
@@ -145,15 +149,23 @@ const doStep = async function(client, step) {
   }
   secrets.forEach(s => _stderr = replaceAll(_stderr, s.secretvalue, '{{' + s.name + "}}"))
   secrets.forEach(s => _stdout = replaceAll(_stdout, s.secretvalue, '{{' + s.name + "}}"))
-
-  await crud.post(client, 'execs', {
-    step: step.id,
-    stdout: _stdout,
-    stderr: _stderr,
-    exitcode: exitcode,
-    time_start: time_start,
-    time_end: time_end
-  })
+  try {
+    await crud.post(client, 'execs', {
+      step: step.id,
+      stdout: _stdout || "",
+      stderr: _stderr || "",
+      exitcode: exitcode,
+      time_start: time_start,
+      time_end: time_end
+    })
+  }
+  catch (e) {
+    console.log("Failed to insert into the DB")
+    console.log("Step:", step.id)
+    console.log("STDERR", _stderr)
+    console.log("STDOUT", _stdout)
+    console.log("ERROR", e)
+  }
 }
 
 const scheduleTask = (task) => {
