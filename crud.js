@@ -17,7 +17,15 @@ module.exports.post = async function (client, table, object) {
     table: table,
     values: object
   })
-	return await client.query(query.toString() + ' RETURNING *', query.values)
+  try {
+    return await client.query(query.toString() + ' RETURNING *', query.values)
+  }
+  catch (e) {
+    console.log("Query failed:", query.toString())
+    console.log(e)
+    throw e
+  }
+	
 }
 
 module.exports.put = async function (client, table, values, criteria) {

@@ -63,116 +63,131 @@ const doStep = async function(client, step) {
   //   _stderr = e.message
   //   exitcode = e.code
   // }
+  await new Promise( async (resolve, reject) => {
+    try {
+      let ex = spawn(step.command, {
+        timeout: step.timeout,
+        shell: true
+      });
 
-  try {
-    let ex = spawn(step.command, {
-      timeout: step.timeout,
-      shell: true
-    });
+      ex.stdout.on('data', (d) => {
+        if (typeof _stdout === "undefined") _stdout = ""
+        if (typeof d !== "undefined") {
+          _stdout = _stdout + d.toString()
+        }
+      })
 
-    ex.stdout.on('data', (d) => {
-      if (typeof _stdout === "undefined") _stdout = ""
-      if (typeof d !== "undefined") {
-        _stdout = _stdout + d.toString()
-      }
-    })
-
-    ex.stderr.on('data', (d) => {
-      if (typeof _stderr === "undefined") _stderr = ""
-      if (typeof d !== "undefined") {
-        _stderr = _stderr + d.toString()
-      }
-    })
-    ex.on('exit', function (e) {
-      console.log(`${step.id } exited with code ${e}`)
-      //ls.stdin.pause()
-      ex.stdout.destroy()
-      ex.stderr.destroy()
-      ex.stdin.destroy()
-      ex.kill('SIGTERM')
-      ex.kill('SIGINT')
-      ex.kill()
-      //console.log(ex)
-      //console.log(ls)
-    })
-    ex.on('close', (c) => {
-      exitcode = c
-      if (typeof exitcode === "undefiend") {
-        exitcode = 1
-      }
-      if (exitcode === null) { 
-        exitcode = 124
+      ex.stderr.on('data', (d) => {
         if (typeof _stderr === "undefined") _stderr = ""
-        _stderr = _stderr + `The command timed out after ${step.timeout / 1000} seconds.`
+        if (typeof d !== "undefined") {
+          _stderr = _stderr + d.toString()
+        }
+      })
+      ex.on('exit', function (e) {
+        console.log(`${step.id } exited with code ${e}`)
+        //ls.stdin.pause()
+        ex.stdout.destroy()
+        ex.stderr.destroy()
+        ex.stdin.destroy()
+        ex.kill('SIGTERM')
+        ex.kill('SIGINT')
+        ex.kill()
+        //console.log(ex)
+        //console.log(ls)
+      })
+      ex.on('close', async (c) => {
+        exitcode = c
+        if (typeof exitcode === "undefiend") {
+          exitcode = 1
+        }
+        if (exitcode === null) { 
+          exitcode = 124
+          if (typeof _stderr === "undefined") _stderr = ""
+          _stderr = _stderr + `The command timed out after ${step.timeout / 1000} seconds.`
+        }
+        notDone = false
+
+        let time_end = new Date()
+
+        if (step.stdoutregex !== null && exitcode === 0) {
+          re = new RegExp(step.stdoutregex)
+          if (!re.test(_stdout)) {
+            console.log(`Step ${step.name} returned exitcode 0 but failed the regex check`)
+            exitcode = 1
+          }
+        }
+        secrets.forEach(s => _stderr = replaceAll(_stderr, s.secretvalue, '{{' + s.name + "}}"))
+        secrets.forEach(s => _stdout = replaceAll(_stdout, s.secretvalue, '{{' + s.name + "}}"))
+        try {
+          await crud.post(client, 'execs', {
+            step: step.id,
+            stdout: _stdout || "",
+            stderr: _stderr || "",
+            exitcode: exitcode,
+            time_start: time_start,
+            time_end: time_end
+          })
+          resolve()
+        }
+        catch (e) {
+          console.log("Failed to insert into the DB")
+          console.log("Step:", step.id)
+          console.log("STDERR", _stderr)
+          console.log("STDOUT", _stdout)
+          console.log("ERROR", e)
+          resolve()
+        }
+      })
+      ex.on('error', (e) => {
+        console.log("UNKNOWN", e)
+      })
+      let waitedFor = 0
+      // while(notDone) {
+      //   //sleep while the socket is open.
+      //   // if (waitedFor >= parseInt(step.timeout)) {
+      //   //   if (typeof _stderr === "undefined") _stderr = ""
+      //   //   _stderr = _stderr + `The command timed out after ${waitedFor / 1000} seconds.`
+      //   //   ex.stdin.pause()
+      //   //   ex.stdout.destroy()
+      //   //   ex.stdin.destroy()
+      //   //   ex.stderr.destroy()
+      //   //   ex.kill('SIGINT')
+      //   //   ex.kill('SIGINT')
+      //   //   ex.kill()
+      //   //   //console.log(ex)
+          
+      //   //   ex.close()
+
+
+      //   //   notDone = false
+      //   // }
+      //   await new Promise(r => setTimeout(r, 100))
+      //   waitedFor += 100
+      //}
+    }
+    catch (e) {
+      console.log(`Step ${step.id} failed.`)
+      exitcode = e.code
+      try {
+        await crud.post(client, 'execs', {
+          step: step.id,
+          stdout: _stdout || "",
+          stderr: _stderr || "",
+          exitcode: exitcode,
+          time_start: time_start,
+          time_end: time_end
+        })
       }
-      notDone = false
-    })
-    ex.on('error', (e) => {
-      console.log("UNKNOWN", e)
-    })
-    let waitedFor = 0
-    while(notDone) {
-      //sleep while the socket is open.
-      // if (waitedFor >= parseInt(step.timeout)) {
-      //   if (typeof _stderr === "undefined") _stderr = ""
-      //   _stderr = _stderr + `The command timed out after ${waitedFor / 1000} seconds.`
-      //   ex.stdin.pause()
-      //   ex.stdout.destroy()
-      //   ex.stdin.destroy()
-      //   ex.stderr.destroy()
-      //   ex.kill('SIGINT')
-      //   ex.kill('SIGINT')
-      //   ex.kill()
-      //   //console.log(ex)
-        
-      //   ex.close()
-
-
-      //   notDone = false
-      // }
-      await new Promise(r => setTimeout(r, 100))
-      waitedFor += 100
+      catch (e) {
+        console.log("Failed to insert into the DB")
+        console.log("Step:", step.id)
+        console.log("STDERR", _stderr)
+        console.log("STDOUT", _stdout)
+        console.log("ERROR", e)
+      }
+      resolve()
     }
-  }
-  catch (e) {
-    console.log(`Step ${step.id} failed.`)
-    exitcode = e.code
-  }
-  let time_end = new Date()
-
-  if (step.stdoutregex !== null && exitcode === 0) {
-    re = new RegExp(step.stdoutregex)
-    if (!re.test(_stdout)) {
-      console.log(`Step ${step.name} returned exitcode 0 but failed the regex check`)
-      exitcode = 1
-    }
-  }
-  secrets.forEach(s => _stderr = replaceAll(_stderr, s.secretvalue, '{{' + s.name + "}}"))
-  secrets.forEach(s => _stdout = replaceAll(_stdout, s.secretvalue, '{{' + s.name + "}}"))
-  try {
-    await crud.post(client, 'execs', {
-      step: step.id,
-      stdout: _stdout || "",
-      stderr: _stderr || "",
-      exitcode: exitcode,
-      time_start: time_start,
-      time_end: time_end
-    }).catch(e => {
-      console.log(e)
-      console.log("Failed to insert into the DB")
-      console.log("Step:", step.id)
-      console.log("STDERR", _stderr)
-      console.log("STDOUT", _stdout)
-      console.log("ERROR", e)
-    })
-  }
-  catch (e) {
-    console.log("Failed to insert into the DB")
-    console.log("Step:", step.id)
-    console.log("STDERR", _stderr)
-    console.log("STDOUT", _stdout)
-    console.log("ERROR", e)
-  }
+  })
 }
 
 const scheduleTask = (task) => {
