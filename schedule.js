@@ -157,6 +157,13 @@ const doStep = async function(client, step) {
       exitcode: exitcode,
       time_start: time_start,
       time_end: time_end
+    }).catch(e => {
+      console.log(e)
+      console.log("Failed to insert into the DB")
+      console.log("Step:", step.id)
+      console.log("STDERR", _stderr)
+      console.log("STDOUT", _stdout)
+      console.log("ERROR", e)
     })
   }
   catch (e) {
