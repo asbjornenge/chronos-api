@@ -5,8 +5,10 @@ RUN wget https://download.docker.com/linux/static/stable/x86_64/docker-18.06.3-c
 RUN tar zxvf docker-18.06.3-ce.tgz
 RUN mv docker/* /usr/local/bin/
 RUN mkdir /app
+RUN mkdir /app/utils
 ADD *.js /app/
 ADD *.json /app/
+ADD utils/* /app/utils
 WORKDIR /app
 RUN npm install
 CMD ["npm", "start"]
