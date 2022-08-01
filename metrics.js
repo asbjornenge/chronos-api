@@ -16,10 +16,16 @@ var exec_failed = new prom.Gauge({
   help: '# Enabled jobs not executed within treshold, indicates issues with the scheduler.',
 })
 
+var exec_awaiting = new prom.Gauge({
+  name: 'chronos_exec_awaiting',
+  help: '# Chronos tasks awaiting initial execution'
+})
+
 const getExecStatus = async function () {
   let successExecs = 0
   let nonExecutedExecs = 0
   let failedExecs = 0
+  let awaitingInit = 0
   //checks that the requested jobs has been executed, to validate scheduler.
   let client = utils.getClient()
   await client.connect()
@@ -30,7 +36,7 @@ const getExecStatus = async function () {
     task.steps = await client.query(`select * from steps where task=${task.id} order by created`)
                         .then(raw => raw.rows)
     for (step of task.steps) {
-      step.execs = await client.query(`select * from execs where step=${step.id} order by time_end DESC limit 1`)
+      step.execs = await client.query(`select * from execs where step=${step.id} AND completed=TRUE order by time_end DESC limit 1`)
                         .then(raw => raw.rows)
     }
   }
@@ -38,14 +44,29 @@ const getExecStatus = async function () {
   for (task of tasks) {
     if (!task.paused) {
       for (step of task.steps) {
+        let lastScheduled
+        try {
+          lastScheduled = new Date(parser.parseExpression(task.cron).prev()._date)
+        }
+        catch (e) {
+          console.log("Error parsing cron on '" + task.name + "'")
+        }
         if (typeof(step.execs[0]) === "undefined") {
+          //check if task was recently resumed
+          if (null !== lastScheduled && task.pauseToggeled > lastScheduled) {
+            awaitingInit += 1
+            continue
+          }
           failedExecs += 1
+          
         }
         else {
-          if (step.execs[0].exitcode === 0) {
+          if (step.execs[0]?.exitcode === 0) {
+
             successExecs += 1
           }
           else {
+            console.log("failed on the 2nd")
             failedExecs += 1
           }
         }
@@ -68,13 +89,13 @@ const getExecStatus = async function () {
           let prev2 = lastScheduled.prev()
 
           if (task.steps[0].execs[0].time_end < prev2._date) {
-            
+            console.log("first", task)
             nonExecutedExecs += 1
           }
         }
         else {
           if (task.steps[0].execs[0].time_end < lastScheduled._date) {
-
+            console.log("2nd", task)
             nonExecutedExecs += 1
           }
         }
@@ -88,7 +109,8 @@ const getExecStatus = async function () {
   return({
     success:  successExecs, 
     error:    failedExecs, 
-    failed:   nonExecutedExecs 
+    failed:   nonExecutedExecs,
+    awaiting: awaitingInit
   })
 }
 
@@ -98,6 +120,7 @@ var get = async function(req, res) {
   exec_failed.set(status.failed || 0)
   exec_success.set(status.success || 0)
   exec_error.set(status.error || 0)
+  exec_awaiting.set(status.awaiting || 0)
   res.end(prom.register.metrics())
 }
 

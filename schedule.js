@@ -3,6 +3,7 @@ const schedule = require('node-schedule')
 const { exec, spawn } = require('child-process-async')
 const utils = require('./utils')
 const crud = require('./crud')
+const { updateTask, createTask, tSocket, runTask, endTask } = require('./utils/socket.js')
 
 let schedules = {}
 
@@ -39,9 +40,12 @@ const run = async function(task) {
 
 const doRun = async function(taskid, client) {
   let steps = await crud.get(client, 'steps', { task: taskid }, { order: { 'sort_order': 'asc' } }).then(raw => raw.rows)
+  let task = await client.query(`select * from tasks where id = ${taskid}`).then(raw => raw.rows)
+  runTask(task)
   for (let step of steps) {
     await doStep(client, step)
   }
+  endTask(task)
 }
 
 const doStep = async function(client, step) {
@@ -50,19 +54,23 @@ const doStep = async function(client, step) {
   var _stdout, _stderr, exitcode;
   var notDone = true
   var time_start = new Date()
+
+  //replaces the secret values with actual secrets.
   secrets.forEach(s => step.command = replaceAll(step.command, '{{' + s.name + "}}", s.secretvalue))
-  // try {
-  //   let { stdout, stderr } = await exec(step.command, {
-  //     timeout: step.timeout
-  //   })
-  //   _stdout = stdout
-  //   _stderr = stderr
-  //   exitcode = 0
-  // } catch(e) {
-  //   _stdout = ''
-  //   _stderr = e.message
-  //   exitcode = e.code
-  // }
+
+  let cExec = await crud.post(client, 'execs', {
+    step: step.id,
+    stdout: "",
+    stderr: "",
+    time_start: time_start,
+    completed: false
+  }).then((e) => e.rows[0])
+
+
+  tSocket(`/task/${step.task}`, "newExec", cExec)
+  
+  
+
   await new Promise( async (resolve, reject) => {
     try {
       let ex = spawn(step.command, {
@@ -75,12 +83,16 @@ const doStep = async function(client, step) {
         if (typeof d !== "undefined") {
           _stdout = _stdout + d.toString()
         }
+        cExec.stdout = _stdout
+        tSocket(`/task/${step.task}`, "updateExec", cExec)
       })
 
       ex.stderr.on('data', (d) => {
         if (typeof _stderr === "undefined") _stderr = ""
         if (typeof d !== "undefined") {
           _stderr = _stderr + d.toString()
+          cExec.stdErr = _stderr
+          tSocket(`/task/${step.task}`, "updateExec", cExec)
         }
       })
       ex.on('exit', function (e) {
@@ -119,14 +131,19 @@ const doStep = async function(client, step) {
         secrets.forEach(s => _stderr = replaceAll(_stderr, s.secretvalue, '{{' + s.name + "}}"))
         secrets.forEach(s => _stdout = replaceAll(_stdout, s.secretvalue, '{{' + s.name + "}}"))
         try {
-          await crud.post(client, 'execs', {
-            step: step.id,
+          let nExec = await crud.put(client, 'execs', {
             stdout: _stdout || "",
             stderr: _stderr || "",
             exitcode: exitcode,
-            time_start: time_start,
-            time_end: time_end
-          })
+            time_end: time_end,
+            completed: true
+          }, {
+            id: cExec.id,
+            step: step.id
+          }).then((r) => r.rows[0])
+
+
+          tSocket(`/task/${step.task}`, "updateExec", nExec)
           resolve()
         }
         catch (e) {
@@ -141,42 +158,24 @@ const doStep = async function(client, step) {
       ex.on('error', (e) => {
         console.log("UNKNOWN", e)
       })
-      let waitedFor = 0
-      // while(notDone) {
-      //   //sleep while the socket is open.
-      //   // if (waitedFor >= parseInt(step.timeout)) {
-      //   //   if (typeof _stderr === "undefined") _stderr = ""
-      //   //   _stderr = _stderr + `The command timed out after ${waitedFor / 1000} seconds.`
-      //   //   ex.stdin.pause()
-      //   //   ex.stdout.destroy()
-      //   //   ex.stdin.destroy()
-      //   //   ex.stderr.destroy()
-      //   //   ex.kill('SIGINT')
-      //   //   ex.kill('SIGINT')
-      //   //   ex.kill()
-      //   //   //console.log(ex)
-          
-      //   //   ex.close()
-
-
-      //   //   notDone = false
-      //   // }
-      //   await new Promise(r => setTimeout(r, 100))
-      //   waitedFor += 100
-      //}
     }
     catch (e) {
       console.log(`Step ${step.id} failed.`)
       exitcode = e.code
       try {
-        await crud.post(client, 'execs', {
-          step: step.id,
+        let nExec = await crud.put(client, 'execs', {
+          id: cExec.id,
           stdout: _stdout || "",
           stderr: _stderr || "",
           exitcode: exitcode,
-          time_start: time_start,
-          time_end: time_end
-        })
+          time_end: time_end,
+          completed: true
+        },{
+          id: cExec.id,
+          step: step.id
+        }).then((r) => r.rows[0])
+
+        tSocket(`/task/${step.task}`, "updateExec", nExec)
       }
       catch (e) {
         console.log("Failed to insert into the DB")
@@ -254,5 +253,5 @@ module.exports = {
   remove,
   doRun,
   doStep,
-  getTaskHash
+  getTaskHash,
 }

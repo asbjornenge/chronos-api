@@ -8,7 +8,7 @@ module.exports.get = async function (req, res) {
     let client = utils.getClient()
     await client.connect()
     let step = await crud.get(client, 'steps', req.params).then(raw => raw.rows)
+    send(res, 200)
     await schedule.doStep(client, step[0])
     await client.end()
-    send(res, 200)
 }

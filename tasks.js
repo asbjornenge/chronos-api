@@ -2,6 +2,7 @@ const { json, send } = require('micro')
 const utils = require('./utils')
 const crud = require('./crud')
 const schedule = require('./schedule')
+const { createTask, updateTask } = require('./utils/socket')
 
 module.exports.get = async function(req, res) {
   let client = utils.getClient()
@@ -39,6 +40,9 @@ module.exports.put = async function(req, res) {
   let client = utils.getClient()
   await client.connect()
   let payload = await json(req)
+  if (Object.keys(payload).find(o => o === 'paused')?.length >= 1) {
+    payload.pauseToggeled = new Date()
+  }
   payload.updated = new Date()
   let tasks = await crud.put(client, 'tasks', payload, req.params).then(raw => raw.rows)
   for (let task of tasks) {

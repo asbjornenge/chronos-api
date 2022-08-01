@@ -53,6 +53,7 @@ router.post('/tasks', tasks.post),
 
 //dashboard
 router.get('/dashboard' ,dashboard.get),
+router.get('/dashboard/task/:task', dashboard.taskDashboard)
 
 //metrics
 router.get('/metrics', metrics.get),

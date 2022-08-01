@@ -1,7 +1,9 @@
 const express = require('express')
 const app = express()
+const server = require('http').createServer(app)
 const router = require('./routes')
 const cors = require('cors')
+const { socketConnection } = require('./utils/socket.js')
 
 async function authValidator (req, res, next) {
     //auth bypass for metrics
@@ -59,6 +61,6 @@ else {
     })
 }
 
-
 app.use('/', router)
-app.listen(3001)
+socketConnection(server)
+server.listen(3001)
