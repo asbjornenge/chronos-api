@@ -1,6 +1,6 @@
 {
   "name": "chronos-api",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "Chronos API",
   "main": "index.js",
   "scripts": {
