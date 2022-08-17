@@ -66,7 +66,6 @@ const getExecStatus = async function () {
             successExecs += 1
           }
           else {
-            console.log("failed on the 2nd")
             failedExecs += 1
           }
         }
@@ -89,13 +88,11 @@ const getExecStatus = async function () {
           let prev2 = lastScheduled.prev()
 
           if (task.steps[0].execs[0].time_end < prev2._date) {
-            console.log("first", task)
             nonExecutedExecs += 1
           }
         }
         else {
           if (task.steps[0].execs[0].time_end < lastScheduled._date) {
-            console.log("2nd", task)
             nonExecutedExecs += 1
           }
         }
