@@ -43,20 +43,21 @@ const getExecStatus = async function () {
 
   for (task of tasks) {
     if (!task.paused) {
+      let lastScheduled  
+      try {
+        lastScheduled = new Date(parser.parseExpression(task.cron).prev()._date)
+      }
+      catch (e) {
+        console.log("Error parsing cron on '" + task.name + "'")
+      }
+
+      if (null !== lastScheduled && task.pauseToggeled > lastScheduled) {
+        awaitingInit += 1
+        continue
+      }
       for (step of task.steps) {
-        let lastScheduled
-        try {
-          lastScheduled = new Date(parser.parseExpression(task.cron).prev()._date)
-        }
-        catch (e) {
-          console.log("Error parsing cron on '" + task.name + "'")
-        }
         if (typeof(step.execs[0]) === "undefined") {
           //check if task was recently resumed
-          if (null !== lastScheduled && task.pauseToggeled > lastScheduled) {
-            awaitingInit += 1
-            continue
-          }
           failedExecs += 1
           
         }
@@ -74,26 +75,28 @@ const getExecStatus = async function () {
       if (task.steps[0].execs.length === 0) { continue }
       //only check runing tasks, and check execution timestamps against cron
       try {
-        var lastScheduled = parser.parseExpression(task.cron).prev()
+        var lastScheduled2 = parser.parseExpression(task.cron).prev()
         var executiontimeout = 0
         for (step of task.steps) {
           executiontimeout += step.timeout
         }
-        var execdonetime = new Date(lastScheduled._date)
+        var execdonetime = new Date(lastScheduled2._date)
         execdonetime += executiontimeout
 
         if (Date.now < execdonetime) {
           //the execution could possibly still be processing. check the previous one
 
-          let prev2 = lastScheduled.prev()
+          let prev2 = lastScheduled2.prev()
 
           if (task.steps[0].execs[0].time_end < prev2._date) {
+            console.log("NonExec", task)
             nonExecutedExecs += 1
           }
         }
         else {
-          if (task.steps[0].execs[0].time_end < lastScheduled._date) {
+          if (task.steps[0].execs[0].time_end < lastScheduled2._date) {
             nonExecutedExecs += 1
+            console.log("NonExec2", task)
           }
         }
       }
