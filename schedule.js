@@ -44,8 +44,14 @@ const doRun = async function(taskid, client) {
   
   let setAknowledge = await client.query(`UPDATE "public"."tasks" SET "acknowledged"='false' WHERE  "id"=${taskid};`)
   runTask(task)
+  let shouldStop = false
   for (let step of steps) {
-    await doStep(client, step)
+    if (shouldStop) { continue }
+    let state = await doStep(client, step)
+    if (step.stopOnFailure && state.exitcode !== 0) {
+      shouldStop = true;
+      console.log(`Halting furter execution due to error on step ${step.id}`)
+    }
   }
   endTask(task)
 }
@@ -70,10 +76,8 @@ const doStep = async function(client, step) {
 
 
   tSocket(`/task/${step.task}`, "newExec", cExec)
-  
-  
 
-  await new Promise( async (resolve, reject) => {
+  await new Promise(async (resolve, reject) => {
     try {
       let ex = spawn(step.command, {
         timeout: step.timeout,
@@ -189,6 +193,8 @@ const doStep = async function(client, step) {
       resolve()
     }
   })
+
+  return await crud.get(client, 'execs', { id: cExec.id}).then(raw => raw.rows[0])
 }
 
 const scheduleTask = (task) => {

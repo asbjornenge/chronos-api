@@ -89,14 +89,14 @@ const getExecStatus = async function () {
           let prev2 = lastScheduled2.prev()
 
           if (task.steps[0].execs[0].time_end < prev2._date) {
-            console.log("NonExec", task)
+            console.log("Non executed task", task)
             nonExecutedExecs += 1
           }
         }
         else {
           if (task.steps[0].execs[0].time_end < lastScheduled2._date) {
             nonExecutedExecs += 1
-            console.log("NonExec2", task)
+            console.log("Non Executed task", task)
           }
         }
       }
