@@ -41,6 +41,8 @@ const run = async function(task) {
 const doRun = async function(taskid, client) {
   let steps = await crud.get(client, 'steps', { task: taskid }, { order: { 'sort_order': 'asc' } }).then(raw => raw.rows)
   let task = await client.query(`select * from tasks where id = ${taskid}`).then(raw => raw.rows)
+  
+  let setAknowledge = await client.query(`UPDATE "public"."tasks" SET "acknowledged"='false' WHERE  "id"=${taskid};`)
   runTask(task)
   for (let step of steps) {
     await doStep(client, step)

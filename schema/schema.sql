@@ -72,6 +72,8 @@ ALTER COLUMN "time_end" DROP DEFAULT;
 
 ALTER TABLE tasks ADD COLUMN "pauseToggeled" TIMESTAMP NULL;
 
+ALTER TABLE tasks ADD COLUMN "acknowledged" boolean NULL;
+
 /* 
 ALTER TABLE steps DROP CONSTRAINT steps_task_fkey, ADD CONSTRAINT steps_task_fkey FOREIGN KEY (task) REFERENCES tasks(id) ON DELETE CASCADE;
 ALTER TABLE execs DROP CONSTRAINT execs_step_fkey, ADD CONSTRAINT execs_step_fkey FOREIGN KEY (step) REFERENCES steps(id) ON DELETE CASCADE;

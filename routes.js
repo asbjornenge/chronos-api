@@ -14,6 +14,7 @@ var runStep = require('./runstep')
 var secrets = require('./secrets')
 var files = require('./files')
 var failed = require('./failed')
+var acknowledge = require('./acknowledge')
 const { requiresAuth } = require('express-openid-connect');
 ;
 
@@ -61,6 +62,10 @@ router.get('/metrics', metrics.get),
 //live execution
 router.get('/run/:task/steps/:id', runStep.get),
 router.get('/run/:task', runTask.get),
+
+//acknowledgement
+router.get('/acknowledge/:id', acknowledge.get),
+router.delete('/acknowledge/:id', acknowledge.delete),
 
 //secrets
 router.get('/secrets', secrets.get),

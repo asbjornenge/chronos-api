@@ -30,7 +30,7 @@ const getExecStatus = async function () {
   let client = utils.getClient()
   await client.connect()
   //check for exit code...
-  let tasks = await client.query(`select * from tasks order by created DESC`)
+  let tasks = await client.query(`select * from tasks where acknowledged is not true order by created DESC`)
                         .then(raw => raw.rows)
   for (task of tasks) {
     task.steps = await client.query(`select * from steps where task=${task.id} order by created`)
