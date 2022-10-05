@@ -15,6 +15,7 @@ var secrets = require('./secrets')
 var files = require('./files')
 var failed = require('./failed')
 var acknowledge = require('./acknowledge')
+var dir = require('./dir')
 const { requiresAuth } = require('express-openid-connect');
 ;
 
@@ -77,7 +78,12 @@ router.put('/secrets/:id', secrets.put),
 router.get('/files', files.get),
 router.delete('/files/:file', files.del),
 router.delete('/files/*', files.del),
+//router.delete('/files/:subfolder/:file', files.del)
 router.post('/files/:file', files.post),
 router.post('/files/*', files.post)
+
+//dir
+router.get('/dir', dir.get),
+router.post('/dir/:directory', dir.post)
 
 module.exports = router
