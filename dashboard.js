@@ -4,7 +4,7 @@ const crud = require('./crud')
 
 module.exports.get = async function(req, res) {
   let client = utils.getClient()
-  await client.connect()
+  
   let tasks = await client.query(`
     SELECT 
     t.*,
@@ -41,12 +41,12 @@ module.exports.get = async function(req, res) {
   ORDER BY t.created DESC
   `).then(raw => raw.rows)
   send(res, 200, tasks)
-  await client.end()
+  
 }
 
 module.exports.taskDashboard = async function (req, res) {
   let client = utils.getClient()
-  await client.connect()
+  
   let tid = req.params.task
   try {
     let base = await client.query(`select * from tasks where id = ${tid}`).then(raw => raw.rows)
@@ -62,5 +62,5 @@ module.exports.taskDashboard = async function (req, res) {
   catch (e) { 
     send(res, 404, "Not found")
   }
-  await client.end()
+  
 }

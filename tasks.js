@@ -6,7 +6,7 @@ const { createTask, updateTask } = require('./utils/socket')
 
 module.exports.get = async function(req, res) {
   let client = utils.getClient()
-  await client.connect()
+  
   let tasks = await crud.get(client, 'tasks', req.params).then(raw => raw.rows)
   if (req.query.steps) {
     for (task of tasks) {
@@ -20,25 +20,25 @@ module.exports.get = async function(req, res) {
       }
     }
   }
-  await client.end()
+  
   send(res, 200, !req.params.id ? tasks : tasks[0])
 }
 
 module.exports.post = async function(req, res) {
   let client = utils.getClient()
-  await client.connect()
+  
   let payload = await json(req)
   payload.paused = true
   payload.created = new Date()
   payload.updated = new Date()
   let raw = await crud.post(client, 'tasks', payload)
-  await client.end()
+  
   send(res, 200, raw.rows[0])
 }
 
 module.exports.put = async function(req, res) {
   let client = utils.getClient()
-  await client.connect()
+  
   let payload = await json(req)
   if (Object.keys(payload).find(o => o === 'paused')?.length >= 1) {
     payload.pauseToggeled = new Date()
@@ -48,15 +48,15 @@ module.exports.put = async function(req, res) {
   for (let task of tasks) {
     await schedule.update(task.id)
   }
-  await client.end()
+  
   send(res, 200, tasks.length === 1 ? tasks[0] : tasks)
 }
 
 module.exports.del = async function(req, res) {
   let client = utils.getClient()
-  await client.connect()
+  
   let raw = await crud.delete(client, 'tasks', req.params)
   await schedule.remove(req.params.id)
-  await client.end()
+  
   send(res, 200, {})
 }

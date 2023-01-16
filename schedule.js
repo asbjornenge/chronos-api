@@ -30,12 +30,12 @@ const getTaskHash = (task) => {
 const run = async function(task) {
   // TODO: Wrap in try/cath ??
   let client = utils.getClient()
-  await client.connect()
+  
   let etask = await crud.get(client, 'tasks', { id: this.task.id }).then(raw => raw.rows)
   etask = etask[0]
   if (etask.paused) throw new Error(`Task ${etask.id} tried to run even if task if paused`)
   await doRun(etask.id, client)
-  await client.end()
+  
 }
 
 const doRun = async function(taskid, client) {
@@ -207,19 +207,19 @@ const scheduleTask = (task) => {
 
 const init = async () => {
   let client = utils.getClient()
-  await client.connect()
+  
   let tasks = await crud.get(client, 'tasks').then(raw => raw.rows)
   tasks = tasks.filter(t => !t.paused)
   for (let task of tasks) {
     task.steps = await crud.get(client, 'steps', { task: task.id }).then(raw => raw.rows)
     scheduleTask(task)
   }
-  await client.end()
+  
 }
 
 const update = async (id) => {
   let client = utils.getClient()
-  await client.connect()
+  
   let task = await crud.get(client, 'tasks', { id: id }).then(raw => raw.rows)
   task = task[0]
   task.steps = await crud.get(client, 'steps', { task: id }).then(raw => raw.rows)
@@ -245,7 +245,7 @@ const update = async (id) => {
       scheduleTask(task)
     }
   }
-  await client.end()
+  
 }
 
 const remove = async (id) => {

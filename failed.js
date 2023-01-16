@@ -4,7 +4,7 @@ const crud = require('./crud')
 
 module.exports.get = async function(req, res) {
   let client = utils.getClient()
-  await client.connect()
+  
   delete req.params.task
   let failedexecs = await client.query(`
   SELECT 
@@ -23,5 +23,5 @@ module.exports.get = async function(req, res) {
   LIMIT 20
   `).then(raw => raw.rows)
   send(res, 200, failedexecs)
-  await client.end()
+  
 }

@@ -5,30 +5,50 @@ const utils = require('./utils')
 var exec_success = new prom.Gauge({
   name: 'chronos_exec_success',
   help: '# Successful backup execs',
+  labelNames: ['task', 'step', 'taskId', 'stepId']
 })
 var exec_error = new prom.Gauge({
   name: 'chronos_exec_error',
   help: '# Errors in backup execs',
+  labelNames: ['task', 'step', 'taskId', 'stepId']
 })
 
 var exec_failed = new prom.Gauge({
   name: 'chronos_exec_nontriggered',
   help: '# Enabled jobs not executed within treshold, indicates issues with the scheduler.',
+  labelNames: ['task', 'step', 'taskId', 'stepId']
 })
 
 var exec_awaiting = new prom.Gauge({
   name: 'chronos_exec_awaiting',
-  help: '# Chronos tasks awaiting initial execution'
+  help: "Execs waiting initial execution",
+  labelNames: ['task', 'taskid']
 })
 
+const getPromPayload = (step,task, value = 1) => {
+  return {
+    "labelNames": {
+      "task": task.name,
+      "taskId": task.id,
+      "step": step.name,
+      "stepId": step.id
+    },
+    "value": value
+  }
+}
+
+const setPromLabels = (prom, payload) => {
+  prom.set({...payload.labelNames}, payload.value)
+}
+
 const getExecStatus = async function () {
-  let successExecs = 0
-  let nonExecutedExecs = 0
-  let failedExecs = 0
-  let awaitingInit = 0
+  let successExecs = []
+  let nonExecutedExecs = []
+  let failedExecs = []
+  let awaitingInit = []
   //checks that the requested jobs has been executed, to validate scheduler.
   let client = utils.getClient()
-  await client.connect()
+  
   //check for exit code...
   let tasks = await client.query(`select * from tasks where acknowledged is not true order by created DESC`)
                         .then(raw => raw.rows)
@@ -52,22 +72,27 @@ const getExecStatus = async function () {
       }
 
       if (null !== lastScheduled && task.pauseToggeled > lastScheduled) {
-        awaitingInit += 1
+        awaitingInit.push({
+          "labelNames": {
+            "task": task.name,
+            "taskId": task.id
+          },
+          "value": 1
+        })
         continue
       }
       for (step of task.steps) {
         if (typeof(step.execs[0]) === "undefined") {
           //check if task was recently resumed
-          failedExecs += 1
-          
+          failedExecs.push(getPromPayload(step, task))    
         }
         else {
           if (step.execs[0]?.exitcode === 0) {
 
-            successExecs += 1
+            successExecs.push(getPromPayload(step, task))
           }
           else {
-            failedExecs += 1
+            failedExecs.push(getPromPayload(step, task))
           }
         }
       }
@@ -89,14 +114,14 @@ const getExecStatus = async function () {
           let prev2 = lastScheduled2.prev()
 
           if (task.steps[0].execs[0].time_end < prev2._date) {
-            console.log("Non executed task", task)
-            nonExecutedExecs += 1
+            //console.log("Non executed task", task)
+            nonExecutedExecs.push(getPromPayload(step, task))
           }
         }
         else {
           if (task.steps[0].execs[0].time_end < lastScheduled2._date) {
-            nonExecutedExecs += 1
-            console.log("Non Executed task", task)
+            nonExecutedExecs.push(getPromPayload(step, task))
+            //console.log("Non Executed task", task)
           }
         }
       }
@@ -105,22 +130,20 @@ const getExecStatus = async function () {
       }
     }
   }
-  await client.end()
-  return({
-    success:  successExecs, 
-    error:    failedExecs, 
-    failed:   nonExecutedExecs,
-    awaiting: awaitingInit
-  })
+  successExecs.map(s => setPromLabels(exec_success, s))
+  nonExecutedExecs.map(s => setPromLabels(exec_failed, s))
+  failedExecs.map(s => setPromLabels(exec_error, s))
+  awaitingInit.map(s => setPromLabels(exec_awaiting, s))
 }
 
 var get = async function(req, res) {
   res.setHeader('Content-Type', prom.register.contentType)
-  let status = await getExecStatus()
-  exec_failed.set(status.failed || 0)
-  exec_success.set(status.success || 0)
-  exec_error.set(status.error || 0)
-  exec_awaiting.set(status.awaiting || 0)
+  exec_failed.reset()
+  exec_success.reset()
+  exec_error.reset()
+  exec_awaiting.reset()
+
+  await getExecStatus()
   res.end(prom.register.metrics())
 }
 
