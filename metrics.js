@@ -22,7 +22,7 @@ var exec_failed = new prom.Gauge({
 var exec_awaiting = new prom.Gauge({
   name: 'chronos_exec_awaiting',
   help: "Execs waiting initial execution",
-  labelNames: ['task', 'taskid']
+  labelNames: ['task', 'taskId']
 })
 
 const getPromPayload = (step,task, value = 1) => {
